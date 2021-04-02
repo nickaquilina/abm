@@ -1,37 +1,65 @@
 import math
 import random
+#import operator
+import matplotlib.pyplot as pyplot
 
-""" Model:
-    # Make a y variable.
-    # Make a x variable.
-    # Change y and x based on random numbers.
-    # Make a second set of y and xs, and make these change randomly as well.
-    # Work out the distance between the two sets of y and xs.
-"""
+# -----------------------------------------------------------------------------
+# Debugging helper. With the global DEBUG set to False, a lot of debug printing
+# is avoided.
+DEBUG = True
 
+def dbgprint(m):
+    if DEBUG:
+        print(m)
+# -----------------------------------------------------------------------------
 
-def gen_coordinates(x, y):
-    """ This function accepts two integers representing y,x coordinates, and returns new
-        coordinates, incremented, or decremented by 1.
+def gen_initial_coords(min_bound=0, max_bound=99):
+    """ Function to generate the random initial co-ordinates within a grid.
+        The default values are 0 & 99 for both x & y, however, these can be
+        overridden.
     """
-    # Generate a random value between 0.0 and 1.0
-    x_rand = random.random()
-    y_rand = random.random()
+    dbgprint("Enter function: gen_initial_coords()")
+    dbgprint(f"-- Mininum Bounds: {min_bound}")
+    dbgprint(f"-- Maximum Bounds: {max_bound}")
 
-    print("x_rand: {}".format(x_rand))
-    print("y_rand: {}".format(y_rand))
+    dbgprint("-- Generate 2 Random Integers")
+    
+    x_rand = random.randint(min_bound, max_bound)
+    dbgprint(f"-- x: {x_rand}")
+    
+    y_rand = random.randint(min_bound, max_bound)
+    dbgprint(f"-- y: {y_rand}")
+    
+    ret = [x_rand, y_rand]
 
-    if x_rand < 0.5:
-        x += 1
-    else:
-        x -= 1
+    dbgprint(f"Return: {ret}\n")
+    return [x_rand, y_rand]
 
-    if y_rand < 0.5:
-        y += 1
-    else:
-        y -= 1
 
-    return (x, y)
+
+def move_agent(xy_coords, overflow=100):
+    """ This function accepts a list of x & Y coordinates. It increments or
+        decrements each axis randomly by 1, and returns a list of [x, y]. This
+        represents an agent moving on the grid.
+    """
+    dbgprint(f"Enter function: move_agent({xy_coords})")
+
+    # Generate a random value between 0.0 and 1.0 for each value.
+    c = []
+    for val in xy_coords:
+        dbgprint(f"-- Coordinate: {val}")
+        rand = random.random()
+        dbgprint(f"-- Random #: {rand}")
+        #Torus overflow
+        if rand < 0.5:
+            val = (val + 1) % overflow
+        else:
+            val = (val - 1) % overflow
+        dbgprint(f"-- New Value: {val}")
+        c.append(val)
+
+    dbgprint(f"Return: {c}\n")
+    return c
 
 
 def calc_euclidean_dist(x0, x1, y0, y1):
@@ -44,35 +72,47 @@ def calc_euclidean_dist(x0, x1, y0, y1):
     return math.sqrt(sqr_Dx + sqr_Dy)
 
 
-def gen_initial_coords(min_bound=0, max_bound=99):
-    """ Function to generate the random initial co-ordinates within a grid. The default
-        values are 0 & 99 for both x & y, however, these can be overridden.
-    """
-    x_rand = random.randint(min_bound, max_bound)
-    y_rand = random.randint(min_bound, max_bound)
+# Define the number of agents, and iterations per agent
+num_agents = 10
+num_iterations = 2
 
-    return(x_rand, y_rand)
-
-
-# Generate the initial coordinates
-x0, y0 = gen_initial_coords()
-x1, y1 = gen_initial_coords()
+# Generate a number of agents
+agents = []
+#for x in range(1, num_agents + 1):
+for x in range(num_agents):
+    agents.append(gen_initial_coords())
+print(agents)
 
 
-print(f"({x0}, {y0})")
-print(f"({x1}, {y1})")
 
-# Move the agents 2 times
-x0, y0 = gen_coordinates(x0, y0)
-x0, y0 = gen_coordinates(x0, y0)
-
-x1, y1 = gen_coordinates(x1, y1)
-x1, y1 = gen_coordinates(x1, y1)
-
-print(f"(x0, y0): ({x0},{y0})")
-print(f"(x1, y1): ({x1},{y1})")
+pyplot.ylim(0, 99)
+pyplot.xlim(0, 99)
+    
+for agent in agents:
+    pyplot.scatter(agent[0], agent[1], marker=".")
+pyplot.show()
 
 
-distance = calc_euclidean_dist(x0, x1, y0, y1)
+for x in range(num_iterations):
+    print(f"Iteration: {x}")
+    tmp = []
+    for agent in agents:
+        agent = move_agent(agent)
+        tmp.append(agent)
+    agents = tmp
 
-print(f"Distance: {distance}")
+    for a in agents:
+        pyplot.scatter(a[0], a[1], marker=".")
+    
+    pyplot.show()
+    
+
+
+
+
+
+
+
+
+# Print the largest based on the y coordinate
+# print(max(agents, key=operator.itemgetter(1)))
