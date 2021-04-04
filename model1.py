@@ -121,47 +121,32 @@ def create_agents(num = 10):
 
 
 # Define the number of agents, and iterations per agent
-num_agents = 4
-num_iterations = 10
+num_agents = 10
+num_iterations = 1000
 
 # Generate a number of agents
 agents = create_agents(num_agents)
 
 
-
-    
-    
-    
-
-
-
-
-"""
-
-    
+pyplot.ylim(0, 100)
+pyplot.xlim(0, 100)
 for agent in agents:
     pyplot.scatter(agent[0], agent[1], marker=".")
 pyplot.show()
 
 
-
-
-
-for x in range(num_iterations):
-    print(f"Iteration: {x}")
+for iteration in range(num_iterations):
+    print(f"Iteration: {iteration}")
     tmp = []
     for agent in agents:
         agent = move_agent(agent)
         tmp.append(agent)
+        pyplot.scatter(agent[0], agent[1], marker=".")
     agents = tmp
-
 
     pyplot.ylim(0, 100)
     pyplot.xlim(0, 100)
-    
-    
-    for a in agents:
-        pyplot.scatter(a[0], a[1], marker=".")
+        
     
     pyplot.show()
     
@@ -170,7 +155,7 @@ for x in range(num_iterations):
 
 
 
-"""
+
 
 
 # Print the largest based on the y coordinate
