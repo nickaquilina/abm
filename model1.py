@@ -122,11 +122,12 @@ def create_agents(num = 10):
 
 # Define the number of agents, and iterations per agent
 num_agents = 10
-num_iterations = 1000
+num_iterations = 10
 
 # Generate a number of agents
 agents = create_agents(num_agents)
 
+"""
 
 pyplot.ylim(0, 100)
 pyplot.xlim(0, 100)
@@ -155,7 +156,7 @@ for iteration in range(num_iterations):
 
 
 
-
+"""
 
 
 # Print the largest based on the y coordinate
