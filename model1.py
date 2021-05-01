@@ -1,163 +1,133 @@
-### TO DO
-### TIMING
-### TESTING
+import os
+import csv
+import traceback
+import matplotlib.pyplot
+import agentframework
 
-import math
-import random
-#import operator
-import itertools
-import matplotlib.pyplot as pyplot
-
-# -----------------------------------------------------------------------------
-# Debugging helper. With the global DEBUG set to False, a lot of debug printing
-# is avoided.
-DEBUG = False
-
-def dbgprint(m):
-    if DEBUG:
-        print(m)
-# -----------------------------------------------------------------------------
-
-def gen_initial_coords(min_bound=0, max_bound=99):
-    """ Function to generate the random initial co-ordinates within a grid.
-        The default values are 0 & 99 for both x & y, however, these can be
-        overridden.
-    """
-    dbgprint("Enter function: gen_initial_coords()")
-    dbgprint(f"-- Mininum Bounds: {min_bound}")
-    dbgprint(f"-- Maximum Bounds: {max_bound}")
-
-    dbgprint("-- Generate 2 Random Integers")
-    
-    x_rand = random.randint(min_bound, max_bound)
-    dbgprint(f"-- x: {x_rand}")
-    
-    y_rand = random.randint(min_bound, max_bound)
-    dbgprint(f"-- y: {y_rand}")
-    
-    ret = [x_rand, y_rand]
-
-    dbgprint(f"Return: {ret}\n")
-    return [x_rand, y_rand]
-
-
-
-def move_agent(xy_coords, overflow=100):
-    """ This function accepts a list of x & Y coordinates. It increments or
-        decrements each axis randomly by 1, and returns a list of [x, y]. This
-        represents an agent moving on the grid.
-    """
-    dbgprint(f"Enter function: move_agent({xy_coords})")
-
-    # Generate a random value between 0.0 and 1.0 for each value.
-    c = []
-    for val in xy_coords:
-        dbgprint(f"-- Coordinate: {val}")
-        rand = random.random()
-        dbgprint(f"-- Random #: {rand}")
-        #Torus overflow
-        if rand < 0.5:
-            val = (val + 1) % overflow
-        else:
-            val = (val - 1) % overflow
-        dbgprint(f"-- New Value: {val}")
-        c.append(val)
-
-    dbgprint(f"Return: {c}\n")
-    return c
-
-# Tutor supplied
 def distance_between(agents_row_a, agents_row_b):
-    return (((agents_row_a[0] - agents_row_b[0])**2) + ((agents_row_a[1] - agents_row_b[1])**2))**0.5
+    return (((agents_row_a.x - agents_row_b.x)**2) +
+    ((agents_row_a.y - agents_row_b.y)**2))**0.5
 
 
-def calc_distance(a1:[], a2:[]) -> float:
-    """ Function accepts 2 sets of coordinates and calculates the Euclidean
-        distance. a1 & a2 each represent a list of [x, y] coordinates, and 
-        should be provided in the form [x, y]
+def csvFileReader(f):
+    """ Load the raster data from the Comma Seperated Values file
     """
-    """ Note on testing
-        For testing, I used the code provided by the tutor, and ran an equality
-        operator between the tutor's code and mine. I also saved a number of test
-        values and the expected results.
-        test_data = [[[47, 58], [70, 95], 43.56604182158393],
-                     [[47, 58], [47, 58], 0.0],
-                     [[47, 58], [25, 20], 43.9089968002003],
-                     [[25, 20], [70, 95], 87.46427842267951],
-                     [[25, 20], [47, 58], 43.9089968002003],
-                     [[44, 42], [70, 95], 59.033888572581766],
-                     [[44, 42], [47, 58], 16.278820596099706],
-                     [[37, 19], [70, 95], 82.85529554590944],
-                     [[37, 19], [47, 58], 40.26164427839479],
-                     [[37, 19], [25, 20], 12.041594578792296]]
+    environment = []
+
+    try:
+        with open(f, "r") as openFile:
+            dataReader = csv.reader(openFile)
+            for row in dataReader:
+                rowlist = []
+                for col in row:
+                    rowlist.append(int(col))
+                environment.append(rowlist)
+
+    except FileNotFoundError:
+        print(f"File not found: {f}")
+        print(traceback.format_exc())
+        environment = None
+
+    return environment
+
+
+def csvFileWriter(data, csvFile):
+    """ Function to write CSV data back to a CSV file. No need to delete the
+        file prior to writing, since I amopening in write mode not append.
     """
-    sqr_Dx = (a2[0] - a1[0])**2
-    sqr_Dy = (a2[1] - a1[1])**2
-
-    return math.sqrt(sqr_Dx + sqr_Dy)
-
-def calc_distance_all(agents_list: []) -> []:
-    """ Calculate the Eclidean distance between all agents. This excludes same
-        agent calculations and is order agnostic.
-    """
-    results = []
-    for agent1, agent2 in itertools.combinations(agents_list, 2):
-        results.append([agent1, agent2, calc_distance(agent1, agent2)])
-
-    return results    
-    
-
-
-def create_agents(num = 10):
-    """ Function to create a number of 'agent' pairs of co-ordinates and return
-        them in the form of a list of lists. Default is set to 10 pairs.
-    """
-    l_agents = []
-    for x in range(num):
-        l_agents.append(gen_initial_coords())
-    
-    return l_agents
+    with open(csvFile, "wt", newline="") as openFile:
+        csvWriter = csv.writer(openFile)
+        for item in data:
+            csvWriter.writerow(item)
 
 
 
-# Define the number of agents, and iterations per agent
-num_agents = 10
-num_iterations = 10
 
-# Generate a number of agents
-agents = create_agents(num_agents)
+
+num_of_agents = 1000
+num_of_iterations = 1000
+agents = []
+
+
+# Load the CSV Data and create the environment var
+# -----------------------------------------------------------------------------
+fl = os.path.join(os.getcwd(), "in.txt")
+environment = csvFileReader(fl)
+xLim = len(environment[0])
+yLim = len(environment)
+
+
+# Make the agents.
+for i in range(num_of_agents):
+    agents.append(agentframework.Agent(environment, xLim, yLim))
+
+
+# Delete the store file if exists. COuld have simply opened in Write mode first
+# time instead, but this is cleaner.
+storeFile = os.path.join(os.getcwd(), "store.txt")
+if os.path.isfile(storeFile):
+    os.remove(storeFile)
+
+# Move the agents.
+for j in range(num_of_iterations):
+    print(f"Iteration: {j}")
+    totalStore = 0
+    for i in range(num_of_agents):
+        agents[i].move()
+        agents[i].eat()
+        ###print(agents[i].store)
+        totalStore += agents[i].store
+    ###print(f"Total Store: {totalStore}")
+    with open(storeFile, "at") as oStore:
+        oStore.write(f"{totalStore}\n")
+
+
+matplotlib.pyplot.xlim(0, xLim)
+matplotlib.pyplot.ylim(0, yLim)
+
+matplotlib.pyplot.imshow(environment)
+for i in range(num_of_agents):
+    matplotlib.pyplot.scatter(agents[i].x,agents[i].y, marker=".")
+matplotlib.pyplot.show()
+
+outFile = os.path.join(os.getcwd(), "out.txt")
+csvFileWriter(environment, outFile)
+
 
 """
+for agents_row_a in agents:
+    for agents_row_b in agents:
+        distance = distance_between(agents_row_a, agents_row_b)
+        print(distance)
+"""
 
-pyplot.ylim(0, 100)
-pyplot.xlim(0, 100)
+
+"""
 for agent in agents:
-    pyplot.scatter(agent[0], agent[1], marker=".")
-pyplot.show()
-
-
-for iteration in range(num_iterations):
-    print(f"Iteration: {iteration}")
-    tmp = []
-    for agent in agents:
-        agent = move_agent(agent)
-        tmp.append(agent)
-        pyplot.scatter(agent[0], agent[1], marker=".")
-    agents = tmp
-
-    pyplot.ylim(0, 100)
-    pyplot.xlim(0, 100)
-        
-    
-    pyplot.show()
-    
-
-
-
-
-
+    print(agent.getCoordinates())
+    agent.move()
+    print(agent.getCoordinates())
+    print("-----------------------------")
 """
 
 
-# Print the largest based on the y coordinate
-# print(max(agents, key=operator.itemgetter(1)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
