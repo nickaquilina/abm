@@ -28,13 +28,13 @@ def gen_initial_coords(min_bound=0, max_bound=99):
     #dbgprint(f"-- Maximum Bounds: {max_bound}")
 
     #dbgprint("-- Generate 2 Random Integers")
-    
+
     x_rand = random.randint(min_bound, max_bound)
     #dbgprint(f"-- x: {x_rand}")
-    
+
     y_rand = random.randint(min_bound, max_bound)
     #dbgprint(f"-- y: {y_rand}")
-    
+
 
     return [x_rand, y_rand]
 
@@ -69,9 +69,9 @@ def distance_between(agents_row_a, agents_row_b):
     return (((agents_row_a[0] - agents_row_b[0])**2) + ((agents_row_a[1] - agents_row_b[1])**2))**0.5
 
 
-def calc_distance(a1:[], a2:[]) -> float:
+def calc_distance(agent1, agent2):
     """ Function accepts 2 sets of coordinates and calculates the Euclidean
-        distance. a1 & a2 each represent a list of [x, y] coordinates, and 
+        distance. a1 & a2 each represent a list of [x, y] coordinates, and
         should be provided in the form [x, y]
     """
     """ Note on testing
@@ -89,8 +89,8 @@ def calc_distance(a1:[], a2:[]) -> float:
                      [[37, 19], [47, 58], 40.26164427839479],
                      [[37, 19], [25, 20], 12.041594578792296]]
     """
-    sqr_Dx = (a2[0] - a1[0])**2
-    sqr_Dy = (a2[1] - a1[1])**2
+    sqr_Dx = (agent2[0] - agent1[0])**2
+    sqr_Dy = (agent2[1] - agent1[1])**2
 
     return math.sqrt(sqr_Dx + sqr_Dy)
 
@@ -102,8 +102,8 @@ def calc_distance_all(agents_list: []) -> []:
     for agent1, agent2 in itertools.combinations(agents_list, 2):
         results.append([agent1, agent2, calc_distance(agent1, agent2)])
 
-    return results    
-    
+    return results
+
 
 
 def create_agents(num = 10):
@@ -113,7 +113,7 @@ def create_agents(num = 10):
     l_agents = []
     for x in range(num):
         l_agents.append(gen_initial_coords())
-    
+
     return l_agents
 
 
@@ -145,10 +145,10 @@ for iteration in range(num_iterations):
 
     pyplot.ylim(0, 100)
     pyplot.xlim(0, 100)
-        
-    
+
+
     pyplot.show()
-    
+
 
 
 

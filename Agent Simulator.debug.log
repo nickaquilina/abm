@@ -1,0 +1,10 @@
+2021-05-01 22:02:59,349 INFO     : model1     Ln: 176 : Agent Simulator initialised
+2021-05-01 22:02:59,349 INFO     : model1     Ln: 177 : Commandline arguments parsed
+2021-05-01 22:02:59,351 DEBUG    : model1     Ln: 180 : Name: Agent Simulator
+2021-05-01 22:02:59,351 DEBUG    : model1     Ln: 181 : Agents: 10
+2021-05-01 22:02:59,351 DEBUG    : model1     Ln: 182 : Iterations: 100
+2021-05-01 22:02:59,352 DEBUG    : model1     Ln: 183 : Neighbourhood: 20
+2021-05-01 22:02:59,352 DEBUG    : model1     Ln: 184 : Verbosity: True
+2021-05-01 22:02:59,353 DEBUG    : model1     Ln: 186 : Environment File:   C:\Users\Nicholas\Desktop\OneDrive - University of Leeds\GEOG5003M - Programming for Geographical Information Analysis\Practicals\abm\in.txt
+2021-05-01 22:02:59,354 DEBUG    : model1     Ln: 187 : Environment Result: C:\Users\Nicholas\Desktop\OneDrive - University of Leeds\GEOG5003M - Programming for Geographical Information Analysis\Practicals\abm\out.txt
+2021-05-01 22:02:59,354 DEBUG    : model1     Ln: 188 : Store File:         C:\Users\Nicholas\Desktop\OneDrive - University of Leeds\GEOG5003M - Programming for Geographical Information Analysis\Practicals\abm\store.txt

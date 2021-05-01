@@ -1,38 +1,46 @@
-import random
-import statistics
-import collections
+import sys
+import argparse
 
-"""
-l = []
 
-for x in range(100000000):
-    l.append(random.randint(1, 10))
 
-c = collections.Counter()
+def parseArguments():
+    parser = argparse.ArgumentParser(description="Agent Simulator. Random agents \
+                                                  interacting with the environment and \
+                                                  each other.")
 
-for item in l:
-    c[item] += 1
+    parser.add_argument("-a", dest="numAgents", default=10,
+                        help='The number of Agents to spawn. Default is 10.')
 
-"""
-"""
-c = collections.Counter()
-for x in range(10000000):
-    c[random.randint(1, 10)] += 1
-"""  
+    parser.add_argument("-i", dest="numIterations", default=100,
+                        help="Iterations to run through. Default is 100")
 
-ll = [[15,32,33,39,45],[28,29,35,41,44],[4,8,23,30,37],
-      [13,18,22,30,40],[2,7,24,33,43],[12,13,14,33,44],
-      [22,32,36,39,42],[15,28,39,41,42],[5,20,26,33,43],
-      [1,2,43,44,45],[20,26,32,38,45],[21,27,28,32,43],
-      [7,14,16,19,35],[3,6,16,18,39],[2,5,20,24,26],
-      [1,7,24,27,33],[12,15,23,37,38],[4,16,30,35,36],
-      [7,30,34,39,42],[21,23,32,35,38],[10,24,29,35,36],
-      [1,15,18,20,34],[1,2,4,6,25],[23,26,38,40,41],
-      [20,25,33,36,45],[1,5,9,23,45],[20,25,33,37,42],
-      [2,11,12,25,35],[8,24,26,29,44],[5,9,13,29,35]]
+    parser.add_argument("-n", dest="neighbourhood", default=20,
+                        help="Neighbourhood distance. Default is 20")
 
-c = collections.Counter()
+    args = parser.parse_args()
 
-for group in ll:
-    for num in group:
-        c[num] += 1
+    try:
+        numAgents = int(args.numAgents)
+        numIterations = int(args.numIterations)
+        neighbourhood = int(args.neighbourhood)
+    except ValueError:
+        print("Values all need to be integers")
+        print("Proceeding with the default variables")
+
+        defaults = {}
+        for key in vars(args):
+            defaults[key] = parser.get_default(key)
+
+        numAgents = defaults["numAgents"]
+        numIterations = defaults["numIterations"]
+        neighbourhood = defaults["neighbourhood"]
+    finally:
+        print("numAgents ",numAgents)
+        print("numIterations ",numIterations)
+        print("neighbourhood ",neighbourhood)
+
+
+parseArguments()
+
+#if __name__ == "__main__":
+    #main()
