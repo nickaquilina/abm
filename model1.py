@@ -5,6 +5,7 @@ import csv
 import time
 import random
 import argparse
+import shutil
 import logging
 import logging.handlers
 import traceback
@@ -17,10 +18,10 @@ import agentframework
 # Retrieve the Current Working Directory and prepare the configurables
 # ----------------------------------------------------------------------------------------
 cwd = os.path.dirname(os.path.abspath(sys.argv[0]))
-name = "Agent Simulator"
-inFile = os.path.join(cwd, "in.txt")
-outFile = os.path.join(cwd, "out.txt")
-storeFile = os.path.join(cwd, "store.txt")
+name      = "Agent-Simulator"
+inFile    = "in.txt"
+outFile   = "out.txt"
+storeFile = "store.txt"
 
 
 def getLogger(name, cwd, debugToConsole=False):
@@ -48,11 +49,12 @@ def getLogger(name, cwd, debugToConsole=False):
     for item in listing:
         if ("debug.log" in item or "info.log" in item) and "backup" not in item:
             try:
-                fullPath = os.path.join(cwd, item)
+                sourcePath = os.path.join(cwd, item)
                 newName = f"{int(time.time())}_backup_{item}"
-                os.rename(fullPath, newName)
+                destPath = os.path.join(cwd, "debuglogsarchive", newName)
+                shutil.move(sourcePath, destPath)
             except PermissionError:
-                print(f"Cannot delete {fullPath}")
+                print(f"Cannot delete {sourcePath}")
                 print(traceback.format_exc())
 
 
@@ -87,7 +89,8 @@ def getLogger(name, cwd, debugToConsole=False):
 
 
 def parseArguments():
-    if len(sys.argv) > 8:
+    print(f"ARGV Length: {len(sys.argv)}")
+    if len(sys.argv) > 10:
         # Using print here, since the logger is not yet avaialble
         print("Too many arguments. Run the program with -h for help")
         print("Exiting")
@@ -99,6 +102,9 @@ def parseArguments():
 
     parser.add_argument("-a", dest="numAgents", default=10,
                         help='The number of Agents to spawn. Default is 10.')
+
+    parser.add_argument("-s", dest="agentStepIncr", default=0,
+                        help='Increments the Agents by this value on each run.')
 
     parser.add_argument("-i", dest="numIterations", default=100,
                         help="Iterations to run through. Default is 100")
@@ -113,6 +119,7 @@ def parseArguments():
 
     try:
         numAgents = int(args.numAgents)
+        agentStepIncr = int(args.agentStepIncr)
         numIterations = int(args.numIterations)
         neighbourhood = int(args.neighbourhood)
     except ValueError:
@@ -125,15 +132,13 @@ def parseArguments():
             defaults[key] = parser.get_default(key)
 
         numAgents = defaults["numAgents"]
+        agentStepIncr = defaults["agentStepIncr"]
         numIterations = defaults["numIterations"]
         neighbourhood = defaults["neighbourhood"]
     finally:
-        return numAgents, numIterations, neighbourhood, args.verbose
+        verbose = args.verbose
+        return numAgents, agentStepIncr, numIterations, neighbourhood, verbose
 
-
-def distance_between(agents_row_a, agents_row_b):
-    return (((agents_row_a.x - agents_row_b.x)**2) +
-    ((agents_row_a.y - agents_row_b.y)**2))**0.5
 
 
 def loadEnvFromCSV(f):
@@ -169,54 +174,71 @@ def saveEnvToCSV(data, csvFile):
 
 
 # Parse the command line arguments
-numAgents, numIterations, neighbourhood, verbose = parseArguments()
+numAgents, agentStepIncr, numIterations, neighbourhood, verbose = parseArguments()
+
+# Prepare the file names for IO
+inFile    = os.path.join(cwd, "in.txt")
+outFile   = os.path.join(cwd, "out.txt")
+storeFile = os.path.join(cwd, "store.txt")
 
 # Get the logging object
 logger = getLogger(name, cwd, debugToConsole=verbose)
 logger.info(f"{name} initialised")
 logger.info("Commandline arguments parsed")
 
+logger.info(f"Name: {name}")
+logger.info(f"Agents: {numAgents}")
+logger.info(f"Agent Step Increment: {agentStepIncr}")
+logger.info(f"Iterations: {numIterations}")
+logger.info(f"Neighbourhood: {neighbourhood}")
+logger.info(f"Verbosity: {verbose}")
 
-logger.debug(f"Name: {name}")
-logger.debug(f"Agents: {numAgents}")
-logger.debug(f"Iterations: {numIterations}")
-logger.debug(f"Neighbourhood: {neighbourhood}")
-logger.debug(f"Verbosity: {verbose}")
-
-logger.debug(f"Environment File:   {inFile}")
-logger.debug(f"Environment Result: {outFile}")
-logger.debug(f"Store File:         {storeFile}")
-
-"""
+logger.info(f"Environment File: {inFile}")
+logger.info(f"Environment Result: {outFile}")
+logger.info(f"Store File: {storeFile}")
 
 
-print("Here")
-# Prepare the file names for IO
-
-
-
-
-
-
+# Load the environment raster and discover the x & y limits
 environment = loadEnvFromCSV(inFile)
 xLim = len(environment[0])
 yLim = len(environment)
 
-agents = []
-
 
 # Create the agents.
-for i in range(numAgents):
+agents = []
+logger.info("Creating agents.")
+for n in range(numAgents):
     agents.append(agentframework.Agent(environment, xLim, yLim, agents))
+logger.info(f"Done. There are {len(agents)} agents.")
+
 
 
 # Delete the store file if exists.
 if os.path.isfile(storeFile):
     os.remove(storeFile)
+    logger.info(f"Store file {storeFile} deleted")
 
 # Move the agents.
+first = True
 for j in range(numIterations):
-    logger.info(f"Iteration: {j}")
+    logger.info(f"Iteration: {j+1}")
+    """ Increment the number of agents if the agentStepIncr variable is greater than 0. A
+        A limit of 20 is hardcoded for now, since adding a lot of agents can lead to
+        performance problems
+    """
+    if (0 < agentStepIncr <= 20) and not first:
+        logger.info("Adding more agents.")
+        for n in range(agentStepIncr):
+            agents.append(agentframework.Agent(environment, xLim, yLim, agents))
+        logger.info(f"Done. There are {len(agents)} agents.")
+    first = False
+
+    #-------------------------------------------------------------------------------------
+    """
+    if j % int(numIterations/10) == 0:
+        logger.info(f"Iteration: {j}")
+    """
+
     totalStore = 0
     random.shuffle(agents)
 
@@ -226,46 +248,26 @@ for j in range(numIterations):
         agents[i].eat()
         agents[i].shareWithNeighbours(neighbourhood)
 
-
         totalStore += agents[i].store
 
     with open(storeFile, "at") as oStore:
         oStore.write(f"{totalStore}\n")
 
 
+
+logger.info(f"Done. {numIterations} iterations executed.")
+
+
 matplotlib.pyplot.xlim(0, xLim)
 matplotlib.pyplot.ylim(0, yLim)
 
 matplotlib.pyplot.imshow(environment)
-for i in range(numAgents):
+for i in range(len(agents)):
     matplotlib.pyplot.scatter(agents[i].x,agents[i].y, marker=".")
 matplotlib.pyplot.show()
 
 
 saveEnvToCSV(environment, outFile)
-"""
-
-"""
-for agents_row_a in agents:
-    for agents_row_b in agents:
-        distance = distance_between(agents_row_a, agents_row_b)
-        print(distance)
-"""
-
-
-"""
-for agent in agents:
-    print(agent.getCoordinates())
-    agent.move()
-    print(agent.getCoordinates())
-    print("-----------------------------")
-"""
-
-
-
-
-
-
 
 
 
