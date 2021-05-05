@@ -1,3 +1,5 @@
+import tkinter
+
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot
@@ -50,13 +52,13 @@ yLim = len(environment)
 # Quick Configs for testing. Commented out when not needed
 #-----------------------------------------------------------------------------------------
 numAgents = 50
-stepIncr = 1
+stepIncr = 0
 numIterations = 0
 neighbourhood = 20
 verbose = True
 #-----------------------------------------------------------------------------------------
 
-#sys.exit()
+
 
 # Create the agents.
 agents = []
@@ -70,13 +72,19 @@ if os.path.isfile(storeFile):
     logger.info(f"Store file {storeFile} deleted")
 
 
+
+
 fig, ax = matplotlib.pyplot.subplots()
 matplotlib.pyplot.xlim(0, xLim)
 matplotlib.pyplot.ylim(0, yLim)
 sc = ax.scatter(0, 0, marker=".", c="Black")
 
+
+
+
 # We only need to show the image once, then update the data. Otherwise, performance degrades
 image = matplotlib.pyplot.imshow(environment)
+
 
 def animate(i):
     xy = []
@@ -112,33 +120,6 @@ matplotlib.pyplot.show()
 
 
 
-functions.saveEnvToCSV(environment, outFile)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# functions.saveEnvToCSV(environment, outFile)
 
 

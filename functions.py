@@ -79,7 +79,6 @@ def getLogger(name, cwd, debugToConsole=False):
     return logger
 
 
-
 def parseArguments():
     print(f"ARGV Length: {len(sys.argv)}")
     if len(sys.argv) > 10:
@@ -132,16 +131,16 @@ def parseArguments():
         return numAgents, stepIncr, numIterations, neighbourhood, verbose
 
 
-def createAgents(env, xL, yL, amount, aList):
+def createAgents(env, xL, yL, amount, aList, logger):
     for i in range(amount):
-        aList.append(agentframework.Agent(env, xL, yL, aList))
+        aList.append(agentframework.Agent(env, xL, yL, aList, logger))
 
 
 def loadEnvFromCSV(f):
     """ Load the raster data from the Comma Seperated Values file
     """
     environment = []
-
+    print(f)
     try:
         with open(f, "r") as openFile:
             dataReader = csv.reader(openFile)
