@@ -84,8 +84,19 @@ class Agent():
 
 
     def calculateDistance(self, otherAgent):
-        """ This function simply calculates the distance between 2 agents. The idea is to
-            keep the logic out of this function and leave it simply to calculate.
+        """ Function accepts 2 sets of coordinates and calculates the Euclidean distance.
+            Since this only calculates, it was easy to test using pre-determined values
+            and comparing the results.
+            test_data = [[[47, 58], [70, 95], 43.56604182158393],
+                         [[47, 58], [47, 58], 0.0],
+                         [[47, 58], [25, 20], 43.9089968002003],
+                         [[25, 20], [70, 95], 87.46427842267951],
+                         [[25, 20], [47, 58], 43.9089968002003],
+                         [[44, 42], [70, 95], 59.033888572581766],
+                         [[44, 42], [47, 58], 16.278820596099706],
+                         [[37, 19], [70, 95], 82.85529554590944],
+                         [[37, 19], [47, 58], 40.26164427839479],
+                         [[37, 19], [25, 20], 12.041594578792296]]
         """
         sqr_Dx = (otherAgent.x - self.x)**2
         sqr_Dy = (otherAgent.y - self.y)**2
@@ -96,7 +107,7 @@ class Agent():
     def shareWithNeighbours(self, neighbours):
         """ Function calculates distance between "this" and the other agents in order to
             share resources with agents close by. This could easily be used, for example
-            for represenging one type of agent consuming another type of agent
+            for represenging one type of agent consuming another type of agent.
         """
         for otherAgent in self.allAgents:
             # comparing IDs, so that agents do not share with self. In reality, without

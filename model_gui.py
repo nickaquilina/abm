@@ -25,7 +25,7 @@ import agentframework
 # not even be required. This procures a large amout of logging, which is easier accessed
 # via the log files, for example using a freeware application like baretail, which
 # supports highlighting, and in general helps a lot with debugging.
-DEBUGTOCONSOLE = False
+DEBUG = False
 # ----------------------------------------------------------------------------------------
 
 # The following URL can be used to generate the starting points for the Agents
@@ -37,7 +37,7 @@ url = "https://www.geog.leeds.ac.uk/courses/computing/practicals/python/agent-fr
 # ----------------------------------------------------------------------------------------
 cwd  = os.path.dirname(os.path.abspath(sys.argv[0]))
 name = "agent-based-modelling"
-logger = functions.getLogger(name, cwd, DEBUGTOCONSOLE)
+logger = functions.getLogger(name, cwd, DEBUG)
 # A note on Logging
 """ Although I do not like this, for now, the logger instance is passed on to the agent in
     order to have continuous debug logging from all areas of the software. In the future,
@@ -84,7 +84,8 @@ class UI:
         self.url = "https://www.geog.leeds.ac.uk/courses/computing/practicals/python/agent-framework/part9/data.html"
         self.urlXYData = None
 
-        # Build the TK Interface (This required a lot of coffee)
+        # Build the TK Interface (This required a lot of coffee). It is far from optimal.
+        # I should have gone with QT instead :)
         self.buildTkInterface()
 
         # Preparing the plotting stuff and displaying initially without data.
@@ -98,35 +99,41 @@ class UI:
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().pack()
+        self.logger.info("Initialisation ready.")
 
 
     def buildTkInterface(self):
+        """ This is mostly for the TK part, building up the UI, and all components related
+            Working with TKinter was quite a pain, and I am not very happy with the
+            result. Threading was a problem I did not manage to tackle as I had to stop
+            somewhere.
+        """
         bottom_frame = tkinter.Frame(self.root)
         bottom_frame.pack(side=tkinter.BOTTOM, anchor=tkinter.E, fill=tkinter.X)
 
+        # Prepare the columns where the bottom components will be visualised.
         for col in range(5):
             bottom_frame.columnconfigure(col, weight=1)
 
-
-        # Number of Agents
+        # Lable and text entry for the number of Agents
         lblNumAgents = tkinter.Label(bottom_frame, text="Agents:")
         lblNumAgents.grid(row=0, column=0, sticky=tkinter.E)
         self.entryNumAgents = tkinter.Entry(bottom_frame, width=6, bd=2)
         self.entryNumAgents.grid(row=0, column=1, sticky=tkinter.W)
 
-        # Iterations
+        # Lable and text entry for the Iterations
         lblIterations = tkinter.Label(bottom_frame, text="Iterations:", height=1)
         lblIterations.grid(row=0, column=2, sticky=tkinter.E)
         self.entryNumIterations = tkinter.Entry(bottom_frame, width=6, bd=2)
         self.entryNumIterations.grid(row=0, column=3, sticky=tkinter.W)
 
-        # Agent Step Increment
+        # Lable and text entry for the Agent Step Increment
         lblStepIncr = tkinter.Label(bottom_frame, text="Step Increment:", height=1)
         lblStepIncr.grid(row=1, column=0, sticky=tkinter.E)
         self.entryStepIncr = tkinter.Entry(bottom_frame, width=6, bd=2)
         self.entryStepIncr.grid(row=1, column=1, sticky=tkinter.W)
 
-        # Neighbourhood
+        # Lable and text entry for Neighbourhood
         lblNeighbourhood = tkinter.Label(bottom_frame, text="Neighbourhood", height=1)
         lblNeighbourhood.grid(row=1, column=2, sticky=tkinter.E)
         self.entryNeighbourhood = tkinter.Entry(bottom_frame, width=6, bd=2)
@@ -141,13 +148,19 @@ class UI:
         # Option to load the starting co-ordinates of the agents from URL provided by the
         # Uni
         # --------------------------------------------------------------------------------
-
-        t = "Load the Agent Start positions from URL"
         self.v = tkinter.IntVar()
+        t = "Load the Agent Start positions from URL"
         self.chkSelectURL = tkinter.Checkbutton(bottom_frame, text=t,
                                                 variable=self.v, onvalue=1, offvalue=0,
                                                 command=self.chkSelectURLStateChange)
-        self.chkSelectURL.grid(row=3, column=0, columnspan=4, sticky=tkinter.W)
+        self.chkSelectURL.grid(row=3, column=0, columnspan=2, sticky=tkinter.W)
+
+
+        self.tkVarShowEnv = tkinter.IntVar()
+        self.chkShowEnv = tkinter.Checkbutton(bottom_frame, text="Enable Env. Image",
+                                                variable=self.tkVarShowEnv,
+                                                onvalue=1, offvalue=0)
+        self.chkShowEnv.grid(row=3, column=2, columnspan=2, sticky=tkinter.W)
 
 
         # Buttons
@@ -175,13 +188,14 @@ class UI:
         self.setDefaultValues()
 
         bottom_frame.pack()
+        self.logger.info("GUI composed")
 
 
     def notify(self, m):
         """ Function to display notifications directly in the UI, bottom frame. This
             should be helpful in guiding the user.
         """
-        self.lblNotify.configure(text=m,  justify="left")
+        self.lblNotify.configure(text=m, justify="left")
 
 
     def downloadTableData(self):
@@ -190,7 +204,7 @@ class UI:
             equivalent to the number of coordinate pairs
         """
         self.logger.debug("Downloading table data")
-        self.logger.debug(f"URL: {self.url}")
+        self.logger.debug(f"Source: {self.url}")
         try:
             r = requests.get(url)
             table = etree.HTML(r.text).find("body/table")
@@ -200,11 +214,13 @@ class UI:
             for row in rows:
                 values = [col.text for col in row]
                 self.urlXYData.append([int(values[0]), int(values[1])])
-            self.logger.debug("Data downloaded")
+            self.logger.debug("Data downloaded and parsed")
         except:
             self.logger.critical("Download data failed")
             self.logger.critical(traceback.format_exc())
             self.notify("There was a problem while downloading the data")
+            # This ensures that the agent creation depending on this failed process does
+            # not happen
             self.urlXYData = None
 
 
@@ -238,6 +254,7 @@ class UI:
     def exitAll(self):
         """ Destroy and exit.
         """
+        self.logger.info("Destroyer of Worlds coming in.....")
         self.root.destroy()
         self.root.quit()
 
@@ -319,8 +336,9 @@ class UI:
 
     def stop(self):
         #TODO: Implement threading and enable a stop button
-        self.logger.debug("Stop")
-        self.logger.debug(f"URL Data: {self.urlXYData}")
+        print(self.tkVarShowEnv.get())
+
+
 
     def threading(self):
         pass
@@ -407,7 +425,10 @@ class UI:
         # The main Iterations loop
         startTime = int(time.time())
 
+        self.logger.info(f"Starting {self.numIterations} Iterations")
+
         for x in range(self.numIterations):
+            self.logger.info(f"Iteration {x} of {self.numIterations}")
             self.notify(f"Iteration {x} of {self.numIterations}")
             self.subPlot.cla()
             # x & y co-ordinate lists for plotting the scatter
@@ -433,7 +454,8 @@ class UI:
 
             # Show the environment data. Note that with enough agents, this will slow
             # down
-            self.subPlot.imshow(self.environment)
+            if self.tkVarShowEnv.get() == 1:
+                self.subPlot.imshow(self.environment)
 
             self.subPlot.set_title ("Agents Scatter Plot", fontsize=16)
             self.subPlot.set_xlabel("X", fontsize=6)
@@ -460,39 +482,9 @@ class UI:
         txt = (f"Finished :) It took {endTime-startTime} seconds for {len(self.agents)} "
                f"agents to complete a run of {self.numIterations} iterations!")
 
+
         self.notify(txt)
-
         self.logger.info(txt)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":

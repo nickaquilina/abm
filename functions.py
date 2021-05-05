@@ -14,7 +14,7 @@ import logging.handlers
 import agentframework
 
 
-def getLogger(name, cwd, debugToConsole=False):
+def getLogger(name, cwd, debug=False):
     """ A basic logging function. Since the script generates a lot of debug information,
         rather than using the inefficient print function, I implemented simple logging,
         where a logging object is acquired at the beginning and used throughout.
@@ -47,34 +47,31 @@ def getLogger(name, cwd, debugToConsole=False):
                 print(f"Cannot delete {sourcePath}")
                 print(traceback.format_exc())
 
-
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     msgFormat = "%(asctime)s %(levelname)-8s : %(module)-10s Ln:%(lineno)4d : %(message)s"
     formatter = logging.Formatter(msgFormat)
 
-    # Console Handler
-
+    # Console Handler - Info messages only
     consoleHandler = logging.StreamHandler()
+    consoleHandler.setLevel(logging.INFO)
     consoleHandler.setFormatter(formatter)
-    if debugToConsole:
-        consoleHandler.setLevel(logging.DEBUG)
-    else:
-        consoleHandler.setLevel(logging.INFO)
     logger.addHandler(consoleHandler)
 
-    debugHandler = logging.handlers.RotatingFileHandler(debugFile, maxBytes=logBytes,\
-                                                        backupCount = logsToKeep)
-
-    debugHandler.setFormatter(formatter)
-    debugHandler.setLevel(logging.DEBUG)
-    logger.addHandler(debugHandler)
-
+    # File logger - Info messages only
     infoHandler = logging.handlers.RotatingFileHandler(infoFile, maxBytes=logBytes, \
                                                        backupCount = logsToKeep)
     infoHandler.setFormatter(formatter)
     infoHandler.setLevel(logging.INFO)
     logger.addHandler(infoHandler)
+
+    # File Handler for debug messages. This is created only if debug is True
+    if debug:
+        debugHandler = logging.handlers.RotatingFileHandler(debugFile, maxBytes=logBytes,\
+                                                            backupCount = logsToKeep)
+        debugHandler.setFormatter(formatter)
+        debugHandler.setLevel(logging.DEBUG)
+        logger.addHandler(debugHandler)
 
     return logger
 
@@ -140,7 +137,6 @@ def loadEnvFromCSV(f):
     """ Load the raster data from the Comma Seperated Values file
     """
     environment = []
-    print(f)
     try:
         with open(f, "r") as openFile:
             dataReader = csv.reader(openFile)
