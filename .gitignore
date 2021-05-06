@@ -1,6 +1,5 @@
 *.log
 archive/
-debuglogsarchive/
 *.pyc
 store.txt
 out.txt
