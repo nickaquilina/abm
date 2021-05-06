@@ -5,7 +5,6 @@ import sys
 import time
 import tkinter
 import requests
-import threading
 import traceback
 from lxml import etree
 import matplotlib.pyplot as plt
@@ -22,10 +21,10 @@ import agentframework
 # ----------------------------------------------------------------------------------------
 # Debug logging is always written to the debug logs stored at the root of the Model script
 # This is simply to enable/disable showing extended logging in the console, which should
-# not even be required. This procures a large amout of logging, which is easier accessed
-# via the log files, for example using a freeware application like baretail, which
-# supports highlighting, and in general helps a lot with debugging.
-DEBUG = False
+# not even be required. This creates a large amount of logging, which is easier accessed
+# via the log files, for example using an application like baretail, which supports
+# highlighting, and in general helps a lot with debugging.
+DEBUG = True
 # ----------------------------------------------------------------------------------------
 
 # The following URL can be used to generate the starting points for the Agents
@@ -108,6 +107,7 @@ class UI:
             result. Threading was a problem I did not manage to tackle as I had to stop
             somewhere.
         """
+        self.logger.info("Building the UI")
         bottom_frame = tkinter.Frame(self.root)
         bottom_frame.pack(side=tkinter.BOTTOM, anchor=tkinter.E, fill=tkinter.X)
 
@@ -207,6 +207,7 @@ class UI:
         self.logger.debug(f"Source: {self.url}")
         try:
             r = requests.get(url)
+
             table = etree.HTML(r.text).find("body/table")
             rows = iter(table)
             headers = [col.text for col in next(rows)]
@@ -236,15 +237,15 @@ class UI:
         # IF CHECKBOX ENABLED - Agent Coordinates will be downloaded from the URL
         elif self.v.get() == 1:
             # Disable the Run
-            self.logger.debug("Downloading the XY Data from the Leeds website")
+            self.logger.info("Downloading the XY Data from the Leeds website")
             self.btnRun.config(state="disabled")
             self.downloadTableData()
-
+            self.logger.info("Done.")
+            self.logger.info("Setting the number of agents to the amount of coordinates")
             self.numAgents = len(self.urlXYData)
             self.entryNumAgents.delete(0, 'end')
             self.entryNumAgents.insert(0, self.numAgents)
-
-
+            self.logger.info("Enable the RUN button again")
             self.btnRun.config(state="normal")
             self.notify(f"Coordinates downloaded from {self.url}")
 
@@ -286,7 +287,6 @@ class UI:
         self.notify("Start by loading the Environment Raster data from the file.")
 
 
-
     def readData(self):
         """ Read the data from the TK elements, and perform very basic checks that all
             values are convertible to integers. If any value error occurs, I am assigning
@@ -297,6 +297,12 @@ class UI:
             self.stepIncr = int(self.entryStepIncr.get())
             self.neighbourhood = int(self.entryNeighbourhood.get())
             self.keepRunning = True
+            self.logger.info(f"Agents.........: {self.numAgents}")
+            self.logger.info(f"Iterations.....: {self.numIterations}")
+            self.logger.info(f"Step Increment.: {self.stepIncr}")
+            self.logger.info(f"Neighbourhood..: {self.neighbourhood}")
+
+
         except ValueError:
             self.logger.debug("ValueError exception when reading the data from the TK UI")
             self.setDefaultValues()
@@ -314,19 +320,22 @@ class UI:
                                                    filetypes = (("Text files", "*.txt*"),
                                                                 ("all files", "*.*")))
             self.lblEnvFile.configure(text=f)
+            self.logger.info(f"Loading environment data from {f}")
             if os.path.isfile(f):
                 self.environment = functions.loadEnvFromCSV(f)
                 self.xLim = len(self.environment[0])
                 self.yLim = len(self.environment)
+                self.logger.info(f"x & y limits set to {self.xLim}, {self.yLim}")
                 self.readData()
                 self.btnRun.config(state="normal")
                 self.chkSelectURL.configure(state="normal")
                 self.notify("You can now run the model, or select to download the coordinate data from the University site")
                 self.keepRunning = True
+                self.logger.info("Environment loaded")
             else:
+                self.logger.debug("Something went wrong")
                 self.lblEnvFile.configure(text="Incorrect file, please try again")
                 self.btnRun.config(state="disabled")
-
         except Exception as e:
             self.logger.critical("Exception occured when trying to select the env file")
             self.logger.critical(traceback.format_exc(e))
@@ -338,12 +347,6 @@ class UI:
         #TODO: Implement threading and enable a stop button
         print(self.tkVarShowEnv.get())
 
-
-
-    def threading(self):
-        pass
-        t1=threading.Thread(target=self.run)
-        t1.start()
 
     def createAgentsWithXY(self):
         """ Function to create the agents using the pre-downloaded x & y coordinates. This
@@ -409,18 +412,24 @@ class UI:
             button is clicked, data is read again in order to be able to change parameters
             between runs.
         """
+        self.logger.info("Starting the Run")
+        self.logger.info("Cleanup and read the data from UI")
         self.cleanup()
         self.readData()
+        self.logger.info("Done")
 
         # Logic to create agents, either by random co-ordinates, or by using the data
         # provided by the University
         # https://www.geog.leeds.ac.uk/courses/computing/practicals/python
         # /agent-framework/part9/data.html
-
+        self.logger.info("About to create the agents")
         if self.urlXYData is not None:
+            self.logger.info("Creating agents using the downloaded data")
             self.createAgentsWithXY()
         else:
+            self.logger.info("Creating agents using random starting points")
             self.createAgents()
+        self.logger.info(f"{len(self.agents)} Agents Created")
 
         # The main Iterations loop
         startTime = int(time.time())
@@ -428,8 +437,9 @@ class UI:
         self.logger.info(f"Starting {self.numIterations} Iterations")
 
         for x in range(self.numIterations):
-            self.logger.info(f"Iteration {x} of {self.numIterations}")
+            self.logger.debug(f"Iteration {x} of {self.numIterations}")
             self.notify(f"Iteration {x} of {self.numIterations}")
+            # Clear the axes, otherwise previous points remain visible
             self.subPlot.cla()
             # x & y co-ordinate lists for plotting the scatter
             x = []
@@ -443,10 +453,8 @@ class UI:
                 agent.move()
                 agent.eat()
                 agent.shareWithNeighbours(self.neighbourhood)
-
                 x.append(agent.x)
                 y.append(agent.y)
-
                 totalStore += agent.store
 
             self.subPlot.set_xlim(0,self.xLim)
@@ -464,22 +472,24 @@ class UI:
             self.canvas.draw()
 
             # Append the store data to the output store file
+            self.logger.debug(f"Appending {totalStore} to the Store txt file")
             with open(self.storeFile, "at") as of:
                 of.write(f"{totalStore}\n")
 
             # If the Step Increment is greater than 0, between each run, agents are added
             # to the agents list. The upper limit of 10 is there due to performance issues
             if 0 < self.stepIncr <= 10:
+                self.logger.info(f"Creating another {self.stepIncr} agents")
                 self.createAgents(append=True)
-
 
 
         self.logger.info("Writing the updated environment data to the output file.")
         functions.saveEnvToCSV(self.environment, self.outFile)
+        self.logger.info("Done")
 
         endTime = int(time.time())
 
-        txt = (f"Finished :) It took {endTime-startTime} seconds for {len(self.agents)} "
+        txt = (f"Finished :) It took {endTime-startTime} second(s) for {len(self.agents)} "
                f"agents to complete a run of {self.numIterations} iterations!")
 
 
